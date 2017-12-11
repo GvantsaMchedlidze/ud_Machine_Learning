@@ -186,11 +186,11 @@ def grid_search():
     
     
     parameters2 = {
-    'dt__criterion': ['gini', 'entropy'],
+    'dt__criterion': ['entropy'],
     'dt__min_samples_split': [2, 3, 4, 5],
-    'dt__max_depth': [None, 2, 5, 6, 7, 10],
+    'dt__max_depth': [None, 2],
     'reduce_dim': [skb],
-    'reduce_dim__k': range(5,15),
+    'reduce_dim__k': range(8,13),
     }
     
     
@@ -214,23 +214,24 @@ def grid_search():
     
     ind = 0. #index for best algorithm
     gs = {}  # array for best estimator algorithm
-    for i in range(0,len(pars)):
-    #for i in range(0,1):
+    #for i in range(0,len(pars)):
+    for i in range(2,3):
       
         gs[i] = GridSearchCV(pips[i], pars[i], verbose=1, cv=sk_fold, scoring = 'f1')
         gs[i].fit((features), (labels))
         
         print (gs[i].best_estimator_)
         # save index of best algorithm
-        if i!=0. and gs[i].best_score_>gs[i-1].best_score_ :
-          ind = i
-        else:
-          ind = ind
+        #if i!=0. and gs[i].best_score_>gs[i-1].best_score_ :
+        #  ind = i
+        #else:
+        #  ind = ind
             
     print ("finished Gridsearch")
-    print (gs[ind].best_estimator_)
+    #print (gs[ind].best_estimator_)
     
-    return gs[ind].best_estimator_
+    #return gs[ind].best_estimator_
+    return gs[i].best_estimator_
 
 
 clf = grid_search()
