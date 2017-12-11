@@ -27,4 +27,6 @@ aS'fraction_from_poi'
 p13
 aS'fraction_to_poi'
 p14
+aS'director_fees'
+p15
 a.

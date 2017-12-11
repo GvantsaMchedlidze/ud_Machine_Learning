@@ -14,7 +14,7 @@ from tester import dump_classifier_and_data
 features_list = ['poi','bonus','salary','total_payments','deferral_payments','deferred_income',
                  'expenses','long_term_incentive',
                  'restricted_stock','restricted_stock_deferred','total_stock_value',
-                 'shared_receipt_with_poi','fraction_from_poi','fraction_to_poi']
+                 'shared_receipt_with_poi','fraction_from_poi','fraction_to_poi','director_fees']
                  
 ### Load the dictionary containing the dataset
 with open("final_project_dataset.pkl", "r") as data_file:
@@ -22,7 +22,8 @@ with open("final_project_dataset.pkl", "r") as data_file:
 
 ### Task 2: Remove outliers
 data_dict.pop('TOTAL',0)
-
+data_dict.pop('THE TRAVEL AGENCY IN THE PARK',0)
+data_dict.pop('LOCKHART EUGENE E',0)
 
 ### Task 3: Create new feature(s)
 
@@ -113,6 +114,11 @@ from sklearn.ensemble import RandomForestClassifier
 
 rf_clf = RandomForestClassifier(n_estimators=25)
 
+# AdaBoost
+from sklearn.ensemble import AdaBoostClassifier
+
+ab_clf = AdaBoostClassifier()
+
 # PCA
 from sklearn.decomposition import PCA
 
@@ -152,12 +158,17 @@ from sklearn.model_selection import GridSearchCV
 ### Define function which returns best algorithm with tuned parameters
 def grid_search():
     
-    # NaiveBayes
+    #FeatureUnion
+    from sklearn.pipeline import FeatureUnion
+    
+    combined_features = FeatureUnion([("kbest", skb), ("pca", pca)])
+    
+   # NaiveBayes
     pipeline0 = Pipeline(steps=[('scaling',scaler),('reduce_dim', pca), ("nb", nb_clf)])
     
     parameters0 = {
     'reduce_dim': [skb],
-    'reduce_dim__k': range(5,14),
+    'reduce_dim__k': range(5,15),
     }
     
     # SVM
@@ -167,34 +178,35 @@ def grid_search():
     'svm__C': [1., 10, 100, 10000],
     'svm__kernel': ['rbf', 'poly'],
     'reduce_dim': [skb],
-    'reduce_dim__k': range(5,14),
+    'reduce_dim__k': range(5,15),
     }
     
     #DecisionTree
     pipeline2 = Pipeline(steps=[('scaling',scaler),('reduce_dim', pca), ('dt', dt_clf)])
     
+    
     parameters2 = {
     'dt__criterion': ['gini', 'entropy'],
-    'dt__min_samples_split': [2, 5, 10, 15],
-    'dt__max_depth': [None, 2, 5, 10],
+    'dt__min_samples_split': [2, 3, 4, 5],
+    'dt__max_depth': [None, 2, 5, 6, 7, 10],
     'reduce_dim': [skb],
-    'reduce_dim__k': range(5,14),
+    'reduce_dim__k': range(5,15),
     }
     
-    #RandomForest
-    pipeline3 = Pipeline(steps=[('scaling',scaler),('reduce_dim', pca), ('rf', rf_clf)])
     
-    parameters3 = {
-    'rf__n_estimators': [5, 7, 10, 14],
-    'rf__criterion': ['gini', 'entropy'],
-    'rf__min_samples_split': [2, 5, 10],
+    #AdaBoost
+    pipeline4 = Pipeline(steps=[('scaling',scaler),('reduce_dim', pca), ('ab', ab_clf)])
+    
+    parameters4 = {
+    'ab__n_estimators': [25, 50, 100],
     'reduce_dim': [skb],
-    'reduce_dim__k': range(5,14),
+    'reduce_dim__k': range(5,15),
     }
+    
     
     # array of pipliens and parameters
-    pars = [parameters0, parameters1, parameters2, parameters3]
-    pips = [pipeline0, pipeline1, pipeline2, pipeline3]
+    pars = [parameters0, parameters1, parameters2, parameters4]
+    pips = [pipeline0, pipeline1, pipeline2,  pipeline4]
     
     
     # loop of pips and pars to get best algorithm 
@@ -203,10 +215,12 @@ def grid_search():
     ind = 0. #index for best algorithm
     gs = {}  # array for best estimator algorithm
     for i in range(0,len(pars)):
+    #for i in range(0,1):
       
         gs[i] = GridSearchCV(pips[i], pars[i], verbose=1, cv=sk_fold, scoring = 'f1')
         gs[i].fit((features), (labels))
         
+        print (gs[i].best_estimator_)
         # save index of best algorithm
         if i!=0. and gs[i].best_score_>gs[i-1].best_score_ :
           ind = i
@@ -214,6 +228,7 @@ def grid_search():
           ind = ind
             
     print ("finished Gridsearch")
+    print (gs[ind].best_estimator_)
     
     return gs[ind].best_estimator_
 

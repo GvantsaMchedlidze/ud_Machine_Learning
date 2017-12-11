@@ -12,6 +12,7 @@
 
 import pickle
 import sys
+import numpy as np 
 from sklearn.cross_validation import StratifiedShuffleSplit
 sys.path.append("../tools/")
 from feature_format import featureFormat, targetFeatureSplit
@@ -23,7 +24,7 @@ RESULTS_FORMAT_STRING = "\tTotal predictions: {:4d}\tTrue positives: {:4d}\tFals
 \tFalse negatives: {:4d}\tTrue negatives: {:4d}"
 
 def test_classifier(clf, dataset, feature_list, folds = 1000):
-    data = featureFormat(dataset, feature_list, sort_keys = True)
+    data = featureFormat(dataset, feature_list,remove_NaN=True, remove_all_zeroes=True, remove_any_zeroes=False, sort_keys = True)
     labels, features = targetFeatureSplit(data)
     cv = StratifiedShuffleSplit(labels, folds, random_state = 42)
     true_negatives = 0
@@ -59,6 +60,22 @@ def test_classifier(clf, dataset, feature_list, folds = 1000):
                 print "All predictions should take value 0 or 1."
                 print "Evaluating performance for processed predictions:"
                 break
+              
+    mask=clf.steps[1][1].get_support()
+    sel_features = [] # The list of your K best features
+    notsel_features = [] # The list of your K best features
+    
+    for bool, feature in zip(mask, feature_list):
+      if bool:
+         sel_features.append(feature)
+      else:
+        notsel_features.append(feature)
+    
+    print "Selected Features "
+    print sel_features 
+    print "\n"
+    
+
     try:
         total_predictions = true_negatives + false_negatives + false_positives + true_positives
         accuracy = 1.0*(true_positives + true_negatives)/total_predictions
@@ -66,6 +83,7 @@ def test_classifier(clf, dataset, feature_list, folds = 1000):
         recall = 1.0*true_positives/(true_positives+false_negatives)
         f1 = 2.0 * true_positives/(2*true_positives + false_positives+false_negatives)
         f2 = (1+2.0*2.0) * precision*recall/(4*precision + recall)
+        
         print clf
         print PERF_FORMAT_STRING.format(accuracy, precision, recall, f1, f2, display_precision = 5)
         print RESULTS_FORMAT_STRING.format(total_predictions, true_positives, false_positives, false_negatives, true_negatives)
