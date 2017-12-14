@@ -63,18 +63,21 @@ def test_classifier(clf, dataset, feature_list, folds = 1000):
               
     mask=clf.steps[1][1].get_support()
     sel_features = [] # The list of your K best features
+    sel_features_ind = [] # The list of your K best features
     notsel_features = [] # The list of your K best features
     
     for bool, feature in zip(mask, feature_list):
       if bool:
          sel_features.append(feature)
+         sel_features_ind
       else:
         notsel_features.append(feature)
-    
-    print "Selected Features "
-    print sel_features 
-    print "\n"
-    
+    for i in range(0,len(mask)):
+      if mask[i]==True:
+        sel_features_ind.append(i)
+        
+    for i in range(0,len(sel_features)):        
+      print (sel_features[i], clf.named_steps['reduce_dim'].scores_[sel_features_ind[i]] )
 
     try:
         total_predictions = true_negatives + false_negatives + false_positives + true_positives
